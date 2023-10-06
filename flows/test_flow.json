@@ -1,0 +1,127 @@
+[
+    {
+        "id": "1c995961f297d555",
+        "type": "tab",
+        "label": "Camara",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "724cb84.ab76948",
+        "type": "ui_template",
+        "z": "1c995961f297d555",
+        "group": "df0fbed4.54999",
+        "name": "Display imagen",
+        "order": 1,
+        "width": "19",
+        "height": "5",
+        "format": "<style>\nimg {\n    border-radius: 8px;\n    display: inline-block !important;\n    width : 100% !important;\n    overflow : hidden;\n    height : auto !important;\n}\n.contenedor{\n    display: grid;\n    width : 100%;\n    grid-template-columns : repeat(2, 1fr);\n    grid-gap : -10px;\n}\n.one{\n    grid-column: 1/2;\n    grid-row : 1;\n    margin: 0px 10px 0 auto;\n}\n.dos{\n    grid-column: 2/2;\n    grid-row : 1;\n    margin: 0px 0px 0 10px;\n}\n</style>\n<div class=\"contenedor\">\n    <img class=\"one\" alt=\"IpCam\" title={{msg.title}}  src=\"{{msg.payload}}\"/>\n    <img class=\"dos\" alt=\"IpCam\" title={{msg.title}}  src=\"{{msg.payload}}\"/>\n</div>\n",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": false,
+        "templateScope": "local",
+        "className": "",
+        "x": 700,
+        "y": 220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "62d9146c.8bbc9c",
+        "type": "inject",
+        "z": "1c995961f297d555",
+        "name": "Camara 2",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 380,
+        "y": 160,
+        "wires": [
+            [
+                "ed92dabc.7a25d8"
+            ]
+        ]
+    },
+    {
+        "id": "ed92dabc.7a25d8",
+        "type": "function",
+        "z": "1c995961f297d555",
+        "name": "",
+        "func": "// Deberá reemplazar dirección su cámara ip, su usuario y su clave.\nmsg.payload = 'http://192.168.137.164:81/stream';\nmsg.title = 'Camara2' ;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 220,
+        "wires": [
+            [
+                "724cb84.ab76948"
+            ]
+        ]
+    },
+    {
+        "id": "6cdf038f.2f368c",
+        "type": "ui_button",
+        "z": "1c995961f297d555",
+        "name": "",
+        "group": "df0fbed4.54999",
+        "order": 3,
+        "width": "4",
+        "height": "1",
+        "passthru": false,
+        "label": "Camara 2",
+        "tooltip": "",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "",
+        "topicType": "str",
+        "x": 380,
+        "y": 260,
+        "wires": [
+            [
+                "ed92dabc.7a25d8"
+            ]
+        ]
+    },
+    {
+        "id": "df0fbed4.54999",
+        "type": "ui_group",
+        "name": "Video",
+        "tab": "227a2f15.8bee9",
+        "order": 1,
+        "disp": true,
+        "width": "27",
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "227a2f15.8bee9",
+        "type": "ui_tab",
+        "name": "Camaras ip",
+        "icon": "dashboard",
+        "order": 18,
+        "disabled": false,
+        "hidden": false
+    }
+]

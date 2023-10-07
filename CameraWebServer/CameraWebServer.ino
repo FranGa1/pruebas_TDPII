@@ -99,7 +99,11 @@ void loop() {
   // Do nothing. Everything is done in another task by the web server
   if (!client.connected()) {
     reconnect();
+
   };
+
+  
+  client.publish("test", "UP FROM ESP32CAM");
 
   //digitalWrite(LED_PIN, HIGH);
   //delay(1000);

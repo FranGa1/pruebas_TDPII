@@ -4,6 +4,8 @@ import curses
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
 
+
+
 def main(stdscr):
     # Properly configure the curses environment
     curses.curs_set(0)
@@ -16,6 +18,7 @@ def main(stdscr):
     client.connect("192.168.129.132", 1883, 60)
 
     while True:
+
         c = stdscr.getch()
         if c != -1:
             if c == curses.KEY_UP:

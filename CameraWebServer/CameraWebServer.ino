@@ -1,6 +1,6 @@
 #include "esp_camera.h"
 #include <WiFi.h>
-#define MQTT_MAX_PACKET_SIZE 512
+#define MQTT_MAX_PACKET_SIZE 36000
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
 

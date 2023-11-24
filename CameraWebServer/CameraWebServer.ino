@@ -10,68 +10,114 @@
 //            Partial images will be transmitted if image exceeds buffer size
 //
 //            You must select partition scheme from the board menu that has at least 3MB APP space.
-//            Face Recognition is DISABLED for ESP32 and ESP32-S2, because it takes up from 15 
+//            Face Recognition is DISABLED for ESP32 and ESP32-S2, because it takes up from 15
 //            seconds to process single frame. Face Detection is ENABLED if PSRAM is enabled as well
 
 // ===================
 // Select camera model
 // ===================
-#define CAMERA_MODEL_AI_THINKER // Has PSRAM
+#define CAMERA_MODEL_AI_THINKER  // Has PSRAM
 #include "camera_pins.h"
 
 #define LED_PIN 4
+#define LEFT_SERVO_PIN 13
+#define RIGHT_SERVO_PIN 15
 
 // ===========================
 // Enter your WiFi credentials
 // ===========================
 const char* ssid = "Red";
-const char* password = "fran1112";
-const char* mqtt_server = "192.168.129.132";
+const char* password = "fran1113";
+const char* mqtt_server = "192.168.161.132";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
-Servo servo1;
-Servo servo2;
+Servo servo_left;
+Servo servo_right;
 
 void startCameraServer();
-//void setupLedFlash(int pin);  
+//void setupLedFlash(int pin);
 void setupCamera();
 void reconnect();
 
+int movimiento = 1;
+
 void callback(char* topic, byte* message, unsigned int length) {
+  //ledcWrite(0, 20);
 
-  digitalWrite(LED_PIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_PIN, LOW);
+  //Serial.print("Message arrived [");
+  //Serial.print(topic);
+  //Serial.print("] ");
+  //for (int i = 0; i < length; i++) {
+  //  Serial.print((char)message[i]);
+  //}
+  //Serial.println();
 
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)message[i]);
+  // servo1 -> 14
+  // servo2 -> 12
+
+  // Convert the message to a String for easier handling
+  String msgString = "";
+  for (unsigned int i = 0; i < length; i++) {
+    msgString += (char)message[i];
+    //Serial.print((char)message[i]);
   }
-  Serial.println();
+  //Serial.println();
 
   if ((char)message[0] == 'U') {
-    servo1.write(0); // Assuming 0 degree is one direction
-    servo2.write(0);
-  } else if ((char)message[0] == 'D') {
-    servo1.write(180); // Assuming 180 degree is opposite direction
-    servo2.write(180);
+    // Rotate both servos in one direction
+    servo_left.writeMicroseconds(1700);  // Adjust this value as per your servo's requirements
+    servo_right.writeMicroseconds(1200);
   }
+  else if ((char)message[0] == 'D') {
+    // Rotate both servos in the opposite direction
+    servo_left.writeMicroseconds(1200);  // Adjust this value as per your servo's requirements
+    servo_right.writeMicroseconds(1700);
+  }
+  else if ((char)message[0] == 'L') {
+    // Rotate only one of the servos
+    servo_left.writeMicroseconds(1480);  // Adjust this value as per your servo's requirements
+    servo_right.writeMicroseconds(1200);  // Stop the second servo
+  }
+  else if ((char)message[0] == 'R') {
+    // Rotate the other servo
+    servo_left.writeMicroseconds(1700);  // Stop the first servo
+    servo_right.writeMicroseconds(1480);  // Adjust this value as per your servo's requirements
+  }
+  else if ((char)message[0] == 'S'){
+    servo_left.writeMicroseconds(1480);
+    servo_right.writeMicroseconds(1480);
+  }
+
+  // Find the comma in the message to separate the command from the timestamp
+  int commaIndex = msgString.indexOf(',');
+  if (commaIndex != -1) {
+    // Extract the timestamp part of the message
+    String timestamp = msgString.substring(commaIndex + 1);
+
+    // Prepare the acknowledgment message
+    String ackMsg = "ACK," + timestamp;
+
+    // Convert the acknowledgment message to a C-style string and publish
+    client.publish("ack_topic", ackMsg.c_str());
+  }
+
+  //ledcWrite(0, 0);
 }
+
+int minPulseWidth = 1000;
+int maxPulseWidth = 2000;
 
 void setup() {
   Serial.begin(9600);
   Serial.setDebugOutput(true);
   Serial.println();
 
-  pinMode(LED_PIN, OUTPUT);
+  //pinMode(LED_PIN, OUTPUT);
+  //ledcSetup(0, 10000, 8);
+  //ledcAttachPin(LED_PIN, 0);
   setupCamera();
 
-  digitalWrite(LED_PIN, HIGH);
-  delay(1000);
-  digitalWrite(LED_PIN, LOW);
 
   WiFi.begin(ssid, password);
   WiFi.setSleep(false);
@@ -91,29 +137,28 @@ void setup() {
 
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
-  servo1.attach(14);  // Assuming servo 1 is connected to GPIO 14
-  servo2.attach(12);  // Assuming servo 2 is connected to GPIO 12
+  servo_left.attach(LEFT_SERVO_PIN, minPulseWidth, maxPulseWidth);  // Assuming servo 1 is connected to GPIO 14
+  servo_right.attach(RIGHT_SERVO_PIN, minPulseWidth, maxPulseWidth);  // Assuming servo 2 is connected to GPIO 12
 }
 
 void loop() {
   // Do nothing. Everything is done in another task by the web server
   if (!client.connected()) {
     reconnect();
-
   };
 
-  
-  client.publish("test", "UP FROM ESP32CAM");
+  client.loop(); // This line ensures the MQTT client processes any incoming messages and maintains the connection.
+
+
+  //client.publish("test", "UP FROM ESP32CAM");
 
   //digitalWrite(LED_PIN, HIGH);
   //delay(1000);
   //digitalWrite(LED_PIN, LOW);
-
-  delay(1000);
 }
 
 void setupCamera() {
-    camera_config_t config;
+  camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
   config.pin_d0 = Y2_GPIO_NUM;
@@ -134,17 +179,17 @@ void setupCamera() {
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.frame_size = FRAMESIZE_UXGA;
-  config.pixel_format = PIXFORMAT_JPEG; // for streaming
+  config.pixel_format = PIXFORMAT_JPEG;  // for streaming
   //config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
   config.fb_location = CAMERA_FB_IN_PSRAM;
   config.jpeg_quality = 12;
   config.fb_count = 1;
-  
+
   // if PSRAM IC present, init with UXGA resolution and higher JPEG quality
   //                      for larger pre-allocated frame buffer.
-  if(config.pixel_format == PIXFORMAT_JPEG){
-    if(psramFound()){
+  if (config.pixel_format == PIXFORMAT_JPEG) {
+    if (psramFound()) {
       config.jpeg_quality = 10;
       config.fb_count = 2;
       config.grab_mode = CAMERA_GRAB_LATEST;
@@ -168,15 +213,15 @@ void setupCamera() {
     return;
   }
 
-  sensor_t * s = esp_camera_sensor_get();
+  sensor_t* s = esp_camera_sensor_get();
   // initial sensors are flipped vertically and colors are a bit saturated
   if (s->id.PID == OV3660_PID) {
-    s->set_vflip(s, 1); // flip it back
-    s->set_brightness(s, 1); // up the brightness just a bit
-    s->set_saturation(s, -2); // lower the saturation
+    s->set_vflip(s, 1);        // flip it back
+    s->set_brightness(s, 1);   // up the brightness just a bit
+    s->set_saturation(s, -2);  // lower the saturation
   }
   // drop down frame size for higher initial frame rate
-  if(config.pixel_format == PIXFORMAT_JPEG){
+  if (config.pixel_format == PIXFORMAT_JPEG) {
     s->set_framesize(s, FRAMESIZE_QVGA);
   }
 }
@@ -197,4 +242,3 @@ void reconnect() {
     }
   }
 }
-
